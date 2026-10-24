@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Hosted DLMS IPv6 meter-reader workflow preview and report generator" />
+    <title>DLMS IPv6 Meter Reader</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">D6</div>
+      <div>
+        <p class="eyebrow">LOCAL OPERATIONS CONSOLE</p>
+        <h1>DLMS IPv6 Meter Reader</h1>
+      </div>
+      <div class="local-badge"><span></span> Hosted preview</div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div>
+          <p class="kicker">BATCH COLLECTION</p>
+          <h2>Read every meter number.<br /><em>One route at a time.</em></h2>
+        </div>
+        <p class="intro-copy">
+          Paste IPv6 endpoints, validate the meter routes, and run a safe browser simulation.
+          A text report is generated and downloaded when the final simulated meter finishes.
+        </p>
+      </section>
+
+      <section class="deployment-notice" role="note">
+        <strong>Web deployment boundary</strong>
+        <span>This hosted page cannot open raw DLMS TCP sockets. Live meter reads require the Windows/macOS desktop app or an authorized HTTPS gateway deployed inside the meter network.</span>
+      </section>
+
+      <div class="workspace">
+        <form id="reader-form" class="control-panel">
+          <section class="panel-block">
+            <div class="section-heading">
+              <div><span>01</span><h3>Meter routes</h3></div>
+              <button type="button" class="text-button" id="load-example">Load example</button>
+            </div>
+            <label for="meter-list">IPv6 list</label>
+            <textarea id="meter-list" rows="8" spellcheck="false" placeholder="Meter 01,2405:201:8000::101,4059&#10;Meter 02,2405:201:8000::102&#10;2405:201:8000::103"></textarea>
+            <p class="field-help">One meter per line: <code>label,IPv6,port</code>. Label and per-meter port are optional.</p>
+            <div class="route-summary"><strong id="route-count">0</strong><span>unique routes ready</span></div>
+          </section>
+
+          <section class="panel-block">
+            <div class="section-heading"><div><span>02</span><h3>DLMS profile</h3></div></div>
+            <div class="field-grid three">
+              <div><label for="port">TCP port</label><input id="port" type="number" min="1" max="65535" value="4059" /></div>
+              <div><label for="interface-type">Framing</label><select id="interface-type"><option>WRAPPER</option><option>HDLC</option></select></div>
+              <div><label for="timeout">Timeout (s)</label><input id="timeout" type="number" min="1" max="120" value="8" /></div>
+            </div>
+            <div class="field-grid two">
+              <div><label for="client-address">Client address</label><input id="client-address" type="number" min="0" max="16383" value="16" /></div>
+              <div><label for="server-address">Server address</label><input id="server-address" type="number" min="0" max="16383" value="1" /></div>
+            </div>
+            <div class="field-grid object-grid">
+              <div><label for="object-type">COSEM object</label><select id="object-type"><option value="DATA">Data</option><option value="REGISTER">Register</option></select></div>
+              <div><label for="obis-code">Meter number OBIS</label><input id="obis-code" value="0.0.96.1.0.255" spellcheck="false" /></div>
+              <div><label for="attribute-index">Attribute</label><input id="attribute-index" type="number" min="1" max="20" value="2" /></div>
+            </div>
+          </section>
+
+          <details class="panel-block security-block">
+            <summary><span class="summary-number">03</span><span><strong>Live-meter security</strong><small>Configured only in the desktop application</small></span><span class="summary-icon">+</span></summary>
+            <div class="security-content">
+              <div class="security-note"><strong>Do not enter meter credentials on this hosted page.</strong> The native desktop application supports password/HLS authentication, system titles, authentication and block-cipher keys, dedicated keys, security suites, and invocation counters. Those values remain on the operator's computer.</div>
+              <p class="boundary-copy">A future live web deployment needs a separately secured HTTPS gateway with authenticated access, audit logging, secret storage, rate limits, and IPv6 reachability to the meters. The public repository intentionally contains no credentials, production meter addresses, or live gateway endpoint.</p>
+            </div>
+          </details>
+
+          <section class="run-panel">
+            <label class="switch-line" for="simulation"><span><strong>Browser simulation</strong><small>Hosted mode validates routes and generates a sample report without contacting meters</small></span><input id="simulation" type="checkbox" checked disabled /><i></i></label>
+            <button id="start-button" class="primary-button" type="submit"><span>Run browser simulation</span><b aria-hidden="true">→</b></button>
+            <p id="form-error" class="error-message" role="alert"></p>
+          </section>
+        </form>
+
+        <aside class="status-panel" aria-live="polite">
+          <div class="status-head">
+            <div><p class="kicker">LIVE BATCH</p><h3 id="status-title">Ready to start</h3></div>
+            <span id="status-pill" class="status-pill idle">IDLE</span>
+          </div>
+          <div class="progress-wrap"><div id="progress-bar" class="progress-bar"></div></div>
+          <div class="metrics">
+            <div><span id="metric-completed">0</span><small>Completed</small></div>
+            <div><span id="metric-success">0</span><small>Success</small></div>
+            <div><span id="metric-failed">0</span><small>Failed</small></div>
+          </div>
+          <div id="current-route" class="current-route"><span class="pulse-dot"></span><div><small>Current route</small><strong>Waiting for a batch</strong></div></div>
+          <div class="result-header"><span>Result stream</span><span id="result-count">0 entries</span></div>
+          <div id="results" class="results-empty">Results will appear here as each meter completes.</div>
+          <a id="download-button" class="download-button hidden" href="#"><span>Download text report</span><b>↓</b></a>
+        </aside>
+      </div>
+    </main>
+
+    <footer><span>DLMS/COSEM · TCP/IPv6 workflow</span><span>Static GitHub Pages build · No secrets collected</span></footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>
+
